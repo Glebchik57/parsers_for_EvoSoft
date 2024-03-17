@@ -1,6 +1,7 @@
 import time
 import csv
 import os
+from functools import wraps
 
 from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
@@ -28,87 +29,112 @@ proxy_options = {
     }
 }
 
-try:
-    link = 'https://www.nseindia.com/'
-    browser = webdriver.Chrome(
-        options=options,
-        seleniumwire_options=proxy_options
-    )
+link = 'https://www.nseindia.com/'
+browser = webdriver.Chrome(
+    options=options,
+    seleniumwire_options=proxy_options
+)
 
-    stealth(
-        browser,
-        languages=["en-US", "en"],
-        vendor="Google Inc.",
-        platform="Win32",
-        webgl_vendor="Intel Inc.",
-        renderer="Intel Iris OpenGL Engine",
-        fix_hairline=True,
-    )
+stealth(
+    browser,
+    languages=["en-US", "en"],
+    vendor="Google Inc.",
+    platform="Win32",
+    webgl_vendor="Intel Inc.",
+    renderer="Intel Iris OpenGL Engine",
+    fix_hairline=True,
+)
 
-    browser.get(link)
 
-    browser.implicitly_wait(15)
+def set_browser(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        browser.implicitly_wait(15)
+        browser.get(link)
+        func()
+        browser.close()
+        browser.quit()
+    return wrapper()
 
-    market_data = browser.find_element(By.ID, 'link_2')
-    hover = ActionChains(browser).move_to_element(market_data)
+
+def find_el(how, what):
+    element = browser.find_element(how, what)
+    return element
+
+
+def find_elms(how, what):
+    elements = browser.find_elements(how, what)
+    return elements
+
+
+def hover_to_point(elm):
+    hover = ActionChains(browser).move_to_element(elm)
     hover.perform()
 
-    preopen_market = browser.find_element(
-        By.XPATH, '//a[text()="Pre-Open Market"][1]'
-    )
-    preopen_market.click()
 
-    titles = [
-        title.text for title in browser.find_elements(
-            By.CSS_SELECTOR, '.symbol-word-break'
-        )
+def write_to_csv(titles, costs):
+    data1 = [
+        title.text for title in titles
     ]
-    costs = [
-        cost.text for cost in browser.find_elements(
-            By.CSS_SELECTOR, 'tbody .bold.text-right'
-        )
+    data2 = [
+        cost.text for cost in costs
     ]
-
     with open('parcered_data.csv', 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerow(['Title', 'Price'])
-        for title, cost in zip(titles, costs):
+        for title, cost in zip(data1, data2):
             writer.writerow([title, cost])
 
-    main_page = browser.find_element(
-        By.CSS_SELECTOR, '.container.top_logomenu .navbar-brand'
-    )
-    main_page.click()
 
-    NB_button = browser.find_element(By.ID, 'NIFTY BANK')
-    NB_button.click()
-
-    draw = browser.find_element(By.ID, 'tab4_container')
+def scroll(target):
+    time.sleep(1)
     browser.execute_script(
         "arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });",
-        draw
+        target
     )
+    time.sleep(3)
 
-    viewall = WebDriverWait(browser, 5).until(
+
+def wait(target):
+    waiting = WebDriverWait(browser, 10).until(
         EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, '#tab4_gainers_loosers .link-wrap a')
+            (target)
         )
     )
-    browser.execute_script(
-        "arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });",
-        viewall
-    )
-    viewall.click()
+    return waiting
 
-    select = Select(browser.find_element(By.ID, "equitieStockSelect"))
-    select.select_by_value("NIFTY ALPHA 50")
 
-    table = browser.find_elements(By.CSS_SELECTOR, '.symbol-word-break')
-    browser.execute_script(
-        "arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });",
-        table[-1]
-    )
+def sel(slct, value):
+    Select(slct).select_by_value(value)
 
-finally:
-    time.sleep(5)
-    browser.quit()
+
+def common_move():
+    find_el(By.CSS_SELECTOR, '.container.top_logomenu .navbar-brand').click()
+    find_el(By.ID, 'NIFTY BANK').click()
+    scroll(find_el(By.ID, 'tab4_container'))
+    wait(find_el(By.CSS_SELECTOR, '#tab4_gainers_loosers .link-wrap a'))
+    scroll(find_el(By.CSS_SELECTOR, '#tab4_gainers_loosers .link-wrap a'))
+    find_el(By.CSS_SELECTOR, '#tab4_gainers_loosers .link-wrap a').click()
+    sel(find_el(By.ID, "equitieStockSelect"), "NIFTY ALPHA 50")
+    scroll(find_elms(By.CSS_SELECTOR, '.symbol-word-break')[-1])
+
+
+@set_browser
+def main():
+    try:
+        hover_to_point(find_el(By.ID, 'link_2'))
+        find_el(By.XPATH, '//a[text()="Pre-Open Market"][1]').click()
+        scroll(find_elms(By.CSS_SELECTOR, '.symbol-word-break')[-1])
+        scroll(find_el(By.CSS_SELECTOR, '.container.top_logomenu .navbar-brand'))
+        write_to_csv(
+            find_elms(By.CSS_SELECTOR, '.symbol-word-break'),
+            find_elms(By.CSS_SELECTOR, 'tbody .bold.text-right')
+        )
+        common_move()
+    except Exception as error:
+        return f'что-то пошло не так:{error}'
+    return 'Успешно'
+
+
+if __name__ == "__main__":
+    main()
