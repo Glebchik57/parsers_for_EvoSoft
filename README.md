@@ -16,8 +16,8 @@
 - selenium-stealth 1.0.6
 - selenium-wire 5.1.0
 ## Запуск проекта
-Клонировать репозиторий:
-```git clone git@github.com:Glebchik57/parsers_for_EvoSoft.git```
+Сделайте форк и склонируйте репозиторий:
+```git@github.com:Glebchik57/parsers_for_EvoSoft.git```
 
 Cоздать и активировать виртуальное окружение:
 
@@ -52,8 +52,3 @@ python musk_parser.py
 ```
 ## Авторы
 - [Sevostyanov Gleb](https://github.com/Glebchik57)
-
-**Содержание**
-
-[TOC]
-
