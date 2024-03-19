@@ -47,6 +47,9 @@ stealth(
 
 
 def set_browser(func):
+    '''Декоратор запускает браузер,
+    выполняет функцию, к которой он применен,
+    после чего закрывает браузер'''
     @wraps(func)
     def wrapper(*args, **kwargs):
         browser.implicitly_wait(15)
@@ -65,22 +68,27 @@ def wait(how, what):
 
 
 def wait_loadung_page():
+    '''Ожидание загрузки страницы'''
     state = ""
     while state != "complete":
         time.sleep(randint(3, 5))
         state = browser.execute_script("return document.readyState")
 
 
-def find_all_tweets(how, what):
+def find_elms(how, what):
+    '''Находит все элементы на странице
+    how - метод "By" для поиска
+    what - CSS селектор или Xpath'''
     return browser.find_elements(how, what)
 
 
 def collector():
+    '''Сборщик текста из Твитов'''
     body = browser.find_element(By.CSS_SELECTOR, 'body')
     twits = []
     while len(twits) != 10:
         body.send_keys(Keys.PAGE_DOWN)
-        for i in find_all_tweets(
+        for i in find_elms(
             By.CSS_SELECTOR,
             '[data-testid="tweet"] [data-testid="tweetText"]'
         ):
@@ -96,6 +104,7 @@ def collector():
 
 
 def print_tweets(tweets):
+    '''Выводит твиты в консоль'''
     for twet in tweets:
         print(twet)
 

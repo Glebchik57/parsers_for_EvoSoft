@@ -47,32 +47,44 @@ stealth(
 
 
 def set_browser(func):
+    '''Декоратор запускает браузер,
+    выполняет функцию, к которой он применен,
+    после чего закрывает браузер'''
     @wraps(func)
     def wrapper(*args, **kwargs):
         browser.implicitly_wait(15)
         browser.get(link)
         func()
+        time.sleep(5)
         browser.close()
         browser.quit()
     return wrapper()
 
 
 def find_el(how, what):
+    '''Находит конкретный элемент на странице
+    how - метод "By" для поиска
+    what - CSS селектор или Xpath'''
     element = browser.find_element(how, what)
     return element
 
 
 def find_elms(how, what):
+    '''Находит все элементы на странице
+    how - метод "By" для поиска
+    what - CSS селектор или Xpath'''
     elements = browser.find_elements(how, what)
     return elements
 
 
 def hover_to_point(elm):
+    '''наводится на выбранный элемент'''
     hover = ActionChains(browser).move_to_element(elm)
     hover.perform()
 
 
 def write_to_csv(titles, costs):
+    '''Создает csv файл и записывает туда переданные значния'''
     data1 = [
         title.text for title in titles
     ]
@@ -87,6 +99,7 @@ def write_to_csv(titles, costs):
 
 
 def scroll(target):
+    '''Скролит до выбранного элемента'''
     time.sleep(1)
     browser.execute_script(
         "arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });",
@@ -96,6 +109,7 @@ def scroll(target):
 
 
 def wait(target):
+    '''Ждет пока выбраный элемент станет кликабельным'''
     waiting = WebDriverWait(browser, 10).until(
         EC.element_to_be_clickable(
             (target)
@@ -105,10 +119,12 @@ def wait(target):
 
 
 def sel(slct, value):
+    '''Выбирает элемент из выподающего списка'''
     Select(slct).select_by_value(value)
 
 
 def common_move():
+    '''Имитация пользовательского сценария'''
     find_el(By.CSS_SELECTOR, '.container.top_logomenu .navbar-brand').click()
     find_el(By.ID, 'NIFTY BANK').click()
     scroll(find_el(By.ID, 'tab4_container'))
